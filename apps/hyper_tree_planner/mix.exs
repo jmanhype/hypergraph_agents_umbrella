@@ -6,7 +6,7 @@ defmodule HyperTreePlanner.MixProject do
     [
       app: :hyper_tree_planner,
       version: "0.1.0",
-      elixir: "~> 1.12", # Match Elixir version installed or a compatible one
+      elixir: "~> 1.17", # Match Elixir version installed or a compatible one
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       # For umbrella projects, this app is typically compiled within the umbrella context
