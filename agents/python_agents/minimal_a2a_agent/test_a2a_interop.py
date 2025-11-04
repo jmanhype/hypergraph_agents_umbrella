@@ -1,11 +1,12 @@
 import httpx
 import json
+from typing import Dict, Any
 
-ELIXIR_AGENT_URL = "http://localhost:4000/api/a2a"
-PYTHON_AGENT_URL = "http://localhost:5001/api/a2a"
+ELIXIR_AGENT_URL: str = "http://localhost:4000/api/a2a"
+PYTHON_AGENT_URL: str = "http://localhost:5001/api/a2a"
 
 # Example task_request message (with streaming enabled)
-A2A_MSG = {
+A2A_MSG: Dict[str, Any] = {
     "type": "task_request",
     "sender": "pyagent1",
     "recipient": "agent1",
@@ -15,22 +16,34 @@ A2A_MSG = {
     }
 }
 
-def send_streaming_request(url: str, msg: dict):
+def send_streaming_request(url: str, msg: Dict[str, Any]) -> None:
+    """Send a streaming request and print the response line by line."""
     print(f"Sending streaming request to {url}...")
-    with httpx.stream("POST", url, json=msg, timeout=10.0) as r:
-        print(f"[status: {r.status_code}]")
-        for line in r.iter_lines():
-            if line:
-                print(line)
-
-def send_normal_request(url: str, msg: dict):
-    print(f"Sending normal request to {url}...")
-    r = httpx.post(url, json=msg, timeout=10.0)
-    print(f"[status: {r.status_code}]")
     try:
-        print(json.dumps(r.json(), indent=2))
-    except Exception:
-        print(r.text)
+        with httpx.stream("POST", url, json=msg, timeout=10.0) as r:
+            print(f"[status: {r.status_code}]")
+            for line in r.iter_lines():
+                if line:
+                    print(line)
+    except httpx.RequestError as e:
+        print(f"[error] Request failed: {e}")
+    except Exception as e:
+        print(f"[error] Unexpected error: {e}")
+
+def send_normal_request(url: str, msg: Dict[str, Any]) -> None:
+    """Send a normal request and print the JSON response."""
+    print(f"Sending normal request to {url}...")
+    try:
+        r = httpx.post(url, json=msg, timeout=10.0)
+        print(f"[status: {r.status_code}]")
+        try:
+            print(json.dumps(r.json(), indent=2))
+        except Exception:
+            print(r.text)
+    except httpx.RequestError as e:
+        print(f"[error] Request failed: {e}")
+    except Exception as e:
+        print(f"[error] Unexpected error: {e}")
 
 if __name__ == "__main__":
     # Test Python agent: task_request streaming
