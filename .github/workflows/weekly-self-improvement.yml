@@ -1,0 +1,314 @@
+name: Weekly Self-Improvement
+
+on:
+  # Run every Monday at 9:00 AM UTC
+  schedule:
+    - cron: '0 9 * * 1'
+
+  # Allow manual triggering
+  workflow_dispatch:
+    inputs:
+      focus_area:
+        description: 'Specific area to focus on (optional)'
+        required: false
+        type: choice
+        options:
+          - 'All'
+          - 'Code Quality'
+          - 'Documentation'
+          - 'Tests'
+          - 'Performance'
+          - 'Dependencies'
+          - 'Bug Fixes'
+        default: 'All'
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: read
+
+jobs:
+  self-improvement:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better context
+
+      - name: Set up improvement context
+        id: context
+        run: |
+          # Determine focus area
+          FOCUS="${{ github.event.inputs.focus_area || 'All' }}"
+          echo "focus_area=$FOCUS" >> $GITHUB_OUTPUT
+
+          # Generate a unique branch name
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          BRANCH_NAME="claude/weekly-improvements-${TIMESTAMP}"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+          echo "Focus Area: $FOCUS"
+          echo "Branch: $BRANCH_NAME"
+
+      - name: Run Code Quality Improvements
+        if: steps.context.outputs.focus_area == 'All' || steps.context.outputs.focus_area == 'Code Quality'
+        uses: anthropics/claude-code-action@v1
+        with:
+          prompt: |
+            Analyze the codebase and make code quality improvements:
+
+            1. Review Elixir code in apps/ for:
+               - Code style consistency
+               - Best practices (OTP, GenServer patterns)
+               - Error handling improvements
+               - Type specs and documentation
+
+            2. Review Python code in agents/python_agents/ for:
+               - Type hints completeness
+               - PEP 8 compliance
+               - Error handling
+               - Docstring quality
+
+            3. Look for:
+               - Unused variables or imports
+               - Code duplication
+               - Potential bugs or edge cases
+               - Performance improvements
+
+            Make small, incremental improvements. Focus on high-impact, low-risk changes.
+            Create clear commit messages for each improvement.
+
+          branch: ${{ steps.context.outputs.branch_name }}
+          create_pr: false  # We'll create PR later with all improvements combined
+
+      - name: Run Documentation Improvements
+        if: steps.context.outputs.focus_area == 'All' || steps.context.outputs.focus_area == 'Documentation'
+        uses: anthropics/claude-code-action@v1
+        with:
+          prompt: |
+            Improve project documentation:
+
+            1. Review README.md:
+               - Ensure all examples are accurate and runnable
+               - Update any outdated information
+               - Improve clarity of setup instructions
+               - Add missing sections if needed
+
+            2. Review module documentation:
+               - Add or improve @moduledoc for Elixir modules
+               - Add or improve docstrings for Python functions/classes
+               - Ensure examples in docs are correct
+
+            3. Check for:
+               - Broken internal links
+               - Outdated code examples
+               - Missing documentation for new features
+               - Inconsistent formatting
+
+            Make documentation clear, accurate, and helpful for new users.
+
+          branch: ${{ steps.context.outputs.branch_name }}
+          create_pr: false
+
+      - name: Run Test Coverage Improvements
+        if: steps.context.outputs.focus_area == 'All' || steps.context.outputs.focus_area == 'Tests'
+        uses: anthropics/claude-code-action@v1
+        with:
+          prompt: |
+            Improve test coverage and quality:
+
+            1. Analyze test coverage:
+               - Identify untested or under-tested modules
+               - Find edge cases that need testing
+               - Look for missing error case tests
+
+            2. For Elixir (ExUnit):
+               - Add tests for uncovered functions
+               - Improve test descriptions
+               - Add property-based tests where appropriate
+
+            3. For Python (pytest):
+               - Add tests for uncovered code paths
+               - Improve test fixtures
+               - Add integration tests where missing
+
+            4. Ensure tests are:
+               - Clear and well-documented
+               - Fast and reliable
+               - Testing meaningful behavior
+
+            Focus on meaningful test additions, not just coverage numbers.
+
+          branch: ${{ steps.context.outputs.branch_name }}
+          create_pr: false
+
+      - name: Run Bug Monitoring and Fixes
+        if: steps.context.outputs.focus_area == 'All' || steps.context.outputs.focus_area == 'Bug Fixes'
+        uses: anthropics/claude-code-action@v1
+        with:
+          prompt: |
+            Monitor for and fix potential bugs:
+
+            1. Static analysis:
+               - Look for nil/null pointer risks
+               - Find potential race conditions
+               - Identify error handling gaps
+               - Check for resource leaks
+
+            2. Review recent issues (if available):
+               - Check for patterns in bug reports
+               - Look for similar issues in codebase
+               - Proactively fix related problems
+
+            3. Common bug patterns:
+               - Off-by-one errors
+               - Incorrect error handling
+               - Missing validations
+               - Type mismatches
+
+            4. Configuration issues:
+               - Check for missing env var handling
+               - Validate config file schemas
+               - Ensure proper defaults
+
+            Only fix clear, well-understood bugs. Document why each fix is necessary.
+
+          branch: ${{ steps.context.outputs.branch_name }}
+          create_pr: false
+
+      - name: Run Dependency Updates
+        if: steps.context.outputs.focus_area == 'All' || steps.context.outputs.focus_area == 'Dependencies'
+        uses: anthropics/claude-code-action@v1
+        with:
+          prompt: |
+            Review and update dependencies safely:
+
+            1. Check for updates:
+               - Review mix.exs for Elixir dependencies
+               - Review requirements.txt for Python dependencies
+               - Look for security advisories
+
+            2. For each outdated dependency:
+               - Check changelog for breaking changes
+               - Assess update risk (patch/minor/major)
+               - Update if safe (patch/minor versions)
+               - Document if major version needs manual review
+
+            3. Also check:
+               - GitHub Actions versions in workflows
+               - Documentation for deprecated APIs
+
+            Only update dependencies that are:
+            - Safe (no breaking changes)
+            - Well-tested
+            - Security-related or bug-fix releases
+
+            Create clear notes about what was updated and why.
+
+          branch: ${{ steps.context.outputs.branch_name }}
+          create_pr: false
+
+      - name: Run Performance Improvements
+        if: steps.context.outputs.focus_area == 'All' || steps.context.outputs.focus_area == 'Performance'
+        uses: anthropics/claude-code-action@v1
+        with:
+          prompt: |
+            Identify and implement performance improvements:
+
+            1. Elixir optimizations:
+               - Look for N+1 query patterns
+               - Check for inefficient list operations
+               - Review process supervision strategies
+               - Optimize message passing patterns
+
+            2. Python optimizations:
+               - Find synchronous operations that could be async
+               - Look for inefficient loops or comprehensions
+               - Check for unnecessary object creation
+               - Review database query efficiency
+
+            3. General improvements:
+               - Caching opportunities
+               - Lazy loading possibilities
+               - Batch operation opportunities
+               - Resource pooling
+
+            Only make performance changes that:
+            - Have measurable impact
+            - Don't sacrifice code clarity
+            - Are well-tested
+            - Are documented
+
+          branch: ${{ steps.context.outputs.branch_name }}
+          create_pr: false
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ steps.context.outputs.branch_name }}
+          title: "🤖 Weekly Self-Improvement: ${{ steps.context.outputs.focus_area }}"
+          body: |
+            ## 🤖 Automated Weekly Self-Improvement
+
+            This PR contains automated improvements generated by Claude Code.
+
+            **Focus Area:** ${{ steps.context.outputs.focus_area }}
+            **Generated:** ${{ github.run_id }}
+
+            ### What Changed
+
+            This PR includes automated improvements in the following areas:
+
+            ${{ steps.context.outputs.focus_area == 'All' && '
+            - ✨ Code quality improvements
+            - 📚 Documentation updates
+            - 🧪 Test coverage enhancements
+            - 🐛 Bug fixes and preventive measures
+            - 📦 Dependency updates
+            - ⚡ Performance optimizations
+            ' || format('- {0}', steps.context.outputs.focus_area) }}
+
+            ### Review Checklist
+
+            - [ ] Review all code changes for correctness
+            - [ ] Verify tests pass (CI will run automatically)
+            - [ ] Check documentation changes are accurate
+            - [ ] Validate dependency updates are safe
+            - [ ] Ensure no breaking changes were introduced
+
+            ### Testing
+
+            All changes should be validated by:
+            1. Automated CI tests (Elixir and Python)
+            2. Manual review of critical changes
+            3. Local testing if needed
+
+            ---
+
+            *This PR was automatically generated by the [Claude Code GitHub Action](https://github.com/anthropics/claude-code-action)*
+            *Review carefully before merging. While Claude Code is helpful, human oversight is essential.*
+
+          labels: |
+            automated
+            self-improvement
+            claude-code
+
+          draft: false
+          delete-branch: true
+
+      - name: Comment on PR with Details
+        if: success()
+        run: |
+          echo "✅ Self-improvement workflow completed successfully!"
+          echo "📋 Pull request created on branch: ${{ steps.context.outputs.branch_name }}"
+          echo "🎯 Focus area: ${{ steps.context.outputs.focus_area }}"
+
+      - name: Report Failure
+        if: failure()
+        run: |
+          echo "❌ Self-improvement workflow failed"
+          echo "Please check the logs for details"
+          exit 1
